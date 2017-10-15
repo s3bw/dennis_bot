@@ -25,19 +25,21 @@ def auth_twitter():
 
 
 def construct_tweet():
+    time1 = time.time()
     api = auth_twitter()
     corpus = research_corpus()
     text_model = markovify.Text(corpus)
 
     status_tweet = text_model.make_short_sentence(120, tries=25)
     
-    print(status_tweet)
+    time2 = time.time()
+    print('{} {:.2f}'.format(status_tweet, time2-time1))
     # api.update_status(status_tweet)
 
 
 if __name__ == '__main__':
 
-    schedule.every().day.at("23:59").do(construct_tweet)
+    schedule.every().day.at("18:30").do(construct_tweet)
     while True:
         schedule.run_pending()
         time.sleep(1)
