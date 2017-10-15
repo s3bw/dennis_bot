@@ -19,21 +19,18 @@ reddit = praw.Reddit(
     username=USERNAME,
 )
 
-print(reddit.user.me())
+print('Reading Reddit:')
 
 CORPUS = []
 
-for index, comment in enumerate(reddit.subreddit('2meirl4meirl').stream.comments()):
-    CORPUS.append(comment.body)
-    if index == 99:
-        print('Done 2meirl4meirl')
-        break
+subreddits = config.get('REDDIT', 'SUBREDDITS').split(',')
 
-for index, comment in enumerate(reddit.subreddit('Existentialism').stream.comments()):
-    CORPUS.append(comment.body)
-    if index == 99:
-        print('Done Existentialism')
-        break
+for subreddit in subreddits:
+    for index, comment in enumerate(reddit.subreddit(subreddit).stream.comments()):
+        CORPUS.append(comment.body)
+        if index == 99:
+            print('Done {}'.format(subreddit))
+            break
 
 CORPUS = [item.encode().decode() for item in CORPUS]
 
