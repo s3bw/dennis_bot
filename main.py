@@ -1,28 +1,33 @@
 import sys
 import time
-
-from time import strftime
-from datetime import (
-    date,
-    datetime,
-    timedelta,
-)
-
-import tweepy
 import configparser
 
-config = configparser.ConfigParser()
-config.read('config.cfg')
+import tweepy
+import markovify
 
-CONSUMER_KEY = config.get('CONSUMER', 'KEY')
-CONSUMER_SECRET = config.get('CONSUMER', 'SECRET')
+from src.reddit_reader import research_corpus
 
-ACCESS_KEY = config.get('ACCESS', 'KEY')
-ACCESS_SECRET = config.get('ACCESS', 'SECRET')
+def auth_twitter():
+    config = configparser.ConfigParser()
+    config.read('config.cfg')
 
-auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-api = tweepy.API(auth)
+    CONSUMER_KEY = config.get('CONSUMER', 'KEY')
+    CONSUMER_SECRET = config.get('CONSUMER', 'SECRET')
 
-api.update_status('200')
+    ACCESS_KEY = config.get('ACCESS', 'KEY')
+    ACCESS_SECRET = config.get('ACCESS', 'SECRET')
 
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
+
+    return tweepy.API(auth)
+
+
+if __name__ == '__main__':
+    api = auth_twitter()
+
+    corpus = research_corpus()
+    text_model = morkovify.Text(corpus)
+
+    status_tweet = text_model.make_short_sentence(120, tries=25)
+    spi.update_status(status_tweet)
