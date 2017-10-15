@@ -27,7 +27,7 @@ if __name__ == '__main__':
     api = auth_twitter()
 
     corpus = research_corpus()
-    text_model = morkovify.Text(corpus)
+    text_model = markovify.Text(corpus)
 
     status_tweet = text_model.make_short_sentence(120, tries=25)
-    spi.update_status(status_tweet)
+    api.update_status(status_tweet)
