@@ -2,42 +2,40 @@ import configparser
 
 import praw
 
-config = configparser.ConfigParser()
-config.read('reddit_config.cfg')
 
-CLIENT_ID = config.get('REDDIT', 'ID')
-CLIENT_SECRET = config.get('REDDIT', 'SECRET')
-PASSWORD = config.get('REDDIT', 'PASSWORD')
-USERNAME = config.get('REDDIT', 'USER_NAME')
+def auth_reddit():
+    config = configparser.ConfigParser()
+    config.read('config.cfg')
 
+    CLIENT_ID = config.get('REDDIT', 'ID')
+    CLIENT_SECRET = config.get('REDDIT', 'SECRET')
+    PASSWORD = config.get('REDDIT', 'PASSWORD')
+    USERNAME = config.get('REDDIT', 'USER_NAME')
 
-reddit = praw.Reddit(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    user_agent='make database with comments.',
-    password=PASSWORD,
-    username=USERNAME,
-)
+    reddit = praw.Reddit(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
+        user_agent='make database with comments.',
+        password=PASSWORD,
+        username=USERNAME,
+    )
+    return reddit, config
 
-print(reddit.user.me())
+def research_corpus():
+    reddit, config = auth_reddit()
 
-CORPUS = []
+    print('Reading Reddit:')
 
-for index, comment in enumerate(reddit.subreddit('2meirl4meirl').stream.comments()):
-    CORPUS.append(comment.body)
-    if index == 99:
-        print('Done 2meirl4meirl')
-        break
+    corpus = []
+    subreddits = config.get('REDDIT', 'SUBREDDITS').split(',')
 
-for index, comment in enumerate(reddit.subreddit('Existentialism').stream.comments()):
-    CORPUS.append(comment.body)
-    if index == 99:
-        print('Done Existentialism')
-        break
+    for subreddit in subreddits:
+        for index, comment in enumerate(reddit.subreddit(subreddit).stream.comments()):
+            corpus.append(comment.body)
+            if index == 99:
+                print('Done {}'.format(subreddit))
+                break
 
-CORPUS = [item.encode().decode() for item in CORPUS]
-
-with open('corpus_data.txt', 'w', encoding='utf-8') as output_data:
-    for item in CORPUS:
-        output_data.write(item)
+    corpus = [item.encode().decode() for item in corpus]
+    return '\n'.join(corpus)
 
