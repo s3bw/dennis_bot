@@ -24,14 +24,35 @@ def auth_twitter():
     return tweepy.API(auth)
 
 
+def validate_tweet(tweet):
+    reject_words = [
+       'subreddit',
+       'OP',
+    ]
+
+    for word in reject_words:
+        if word in tweet:
+            return False
+
+        if word.capitalize() in tweet:
+            return False
+    return True
+
+
 def construct_tweet():
     time1 = time.time()
     api = auth_twitter()
     corpus = research_corpus()
     text_model = markovify.Text(corpus)
 
-    status_tweet = text_model.make_short_sentence(120, tries=25)
-    
+    isValid = False
+    while isValid == False:
+        status_tweet = text_model.make_short_sentence(120, tries=25)
+        isValid = validate_tweet(status_tweet)
+        print('Tweet: {}'.format(isValid))
+        if isValid == False:
+            print(status_tweet)
+
     time2 = time.time()
     print('{} {:.2f}'.format(status_tweet, time2-time1))
     # api.update_status(status_tweet)
