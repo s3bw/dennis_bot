@@ -81,7 +81,7 @@ def construct_tweet():
 if __name__ == '__main__':
 
     # schedule.every().day.at("17:30").do(construct_tweet)
-    schedule.every().hour.do(contruct_tweet)
+    schedule.every().hour.do(construct_tweet)
     while True:
         schedule.run_pending()
         time.sleep(1)
