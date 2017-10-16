@@ -1,3 +1,4 @@
+import os
 import time
 import configparser
 
@@ -8,7 +9,7 @@ import markovify
 from src.reddit_reader import research_corpus
 
 
-def auth_twitter():
+def auth_twitter_locally():
     config = configparser.ConfigParser()
     config.read('config.cfg')
 
@@ -17,6 +18,19 @@ def auth_twitter():
 
     ACCESS_KEY = config.get('ACCESS', 'KEY')
     ACCESS_SECRET = config.get('ACCESS', 'SECRET')
+
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
+
+    return tweepy.API(auth)
+
+
+def auth_twitter_remotely():
+    CONSUMER_KEY = os.environ.get('CONSUMER_KEY')
+    CONSUMER_SECRET = os.environ.get('CONSUMER_SECRET')
+
+    ACCESS_KEY = os.environ.get('ACCESS_KEY')
+    ACCESS_SECRET = os.environ.get('ACCESS_SECRET')
 
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
@@ -41,7 +55,13 @@ def validate_tweet(tweet):
 
 def construct_tweet():
     time1 = time.time()
-    api = auth_twitter()
+
+    # Attempts to find config vars:
+    try:
+        api = auth_twitter_locally()
+    except:
+        api = auth_twitter_remotely()
+
     corpus = research_corpus()
     text_model = markovify.Text(corpus)
 
