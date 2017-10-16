@@ -75,7 +75,7 @@ def construct_tweet():
 
     time2 = time.time()
     print('{} {:.2f}'.format(status_tweet, time2-time1))
-    # api.update_status(status_tweet)
+    api.update_status(status_tweet)
 
 
 if __name__ == '__main__':
