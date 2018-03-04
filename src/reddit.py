@@ -1,29 +1,13 @@
 import os
-import configparser
+import logging
 
 import praw
 
 
-def auth_reddit_locally():
-    config = configparser.ConfigParser()
-    config.read('config.cfg')
-
-    CLIENT_ID = config.get('REDDIT', 'ID')
-    CLIENT_SECRET = config.get('REDDIT', 'SECRET')
-    PASSWORD = config.get('REDDIT', 'PASSWORD')
-    USERNAME = config.get('REDDIT', 'USER_NAME')
-
-    reddit = praw.Reddit(
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        user_agent='make database with comments.',
-        password=PASSWORD,
-        username=USERNAME,
-    )
-    return reddit, config
+logging.basicConfig(filename='dennis_log', level=logging.INFO)
 
 
-def auth_reddit_remotely():
+def auth():
     CLIENT_ID = os.environ.get('REDDIT_ID')
     CLIENT_SECRET = os.environ.get('REDDIT_SECRET')
     PASSWORD = os.environ.get('REDDIT_PASSWORD')
@@ -40,26 +24,28 @@ def auth_reddit_remotely():
 
 
 def research_corpus():
-    try:
-        reddit, config = auth_reddit_locally()
-    except:
-        reddit = auth_reddit_remotely()
-
-    print('Reading Reddit:')
+    reddit = auth()
+    logging.info("Reading Reddit.")
 
     corpus = []
-    try:
-        subreddits = config.get('REDDIT', 'SUBREDDITS').split(',')
-    except:
-        subreddits = os.environ.get('REDDIT_SUBREDDITS').split(',')
+    subreddits = os.environ.get('REDDIT_SUBREDDITS').split(',')
 
     for subreddit in subreddits:
         for index, comment in enumerate(reddit.subreddit(subreddit).stream.comments()):
-            corpus.append(comment.body)
+            entry = [subreddit, comment.body]
+            corpus.append(entry)
+
             if index == 99:
-                print('Done {}'.format(subreddit))
+                # logging.info("Done {}".format(subreddit))
                 break
 
-    corpus = [item.encode().decode() for item in corpus]
-    return '\n'.join(corpus)
+    corpus = [(
+        item[0],
+        item[1].encode().decode().strip(),
+        len(item[1])
+        )
+        for item in corpus
+    ]
+
+    return corpus
 

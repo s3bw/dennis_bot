@@ -1,86 +1,48 @@
-import os
 import time
-import configparser
+import logging
 
-import tweepy
 import schedule
-import markovify
 
-from src.reddit_reader import research_corpus
-
-
-def auth_twitter_locally():
-    config = configparser.ConfigParser()
-    config.read('config.cfg')
-
-    CONSUMER_KEY = config.get('CONSUMER', 'KEY')
-    CONSUMER_SECRET = config.get('CONSUMER', 'SECRET')
-
-    ACCESS_KEY = config.get('ACCESS', 'KEY')
-    ACCESS_SECRET = config.get('ACCESS', 'SECRET')
-
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-
-    return tweepy.API(auth)
+import src.postgresql_db as psql
+from src import twitter
+from src import reddit
+from src.process_data import process_new_data
+from src import nlp_modelling
 
 
-def auth_twitter_remotely():
-    CONSUMER_KEY = os.environ.get('CONSUMER_KEY')
-    CONSUMER_SECRET = os.environ.get('CONSUMER_SECRET')
-
-    ACCESS_KEY = os.environ.get('ACCESS_KEY')
-    ACCESS_SECRET = os.environ.get('ACCESS_SECRET')
-
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-
-    return tweepy.API(auth)
-
-
-def validate_tweet(tweet):
-    reject_words = [
-       'subreddit',
-       'OP',
-    ]
-
-    for word in reject_words:
-        if word in tweet:
-            return False
-
-        if word.capitalize() in tweet:
-            return False
-    return True
+logging.basicConfig(filename='dennis_log', level=logging.INFO)
 
 
 def construct_tweet():
     time1 = time.time()
 
-    # Attempts to find config vars:
-    try:
-        api = auth_twitter_locally()
-    except:
-        api = auth_twitter_remotely()
+    corpus = reddit.research_corpus()
+    process_corpus = process_new_data(corpus)
 
-    corpus = research_corpus()
-    text_model = markovify.Text(corpus)
+    logging.info("length,{}".format(len(process_corpus)))
+    connection = psql.auth()
+    psql.insert_many(connection, process_corpus)
+    
+    training_corpus = psql.extract_data(connection)
 
-    isValid = False
-    while isValid == False:
-        status_tweet = text_model.make_short_sentence(120, tries=25)
-        isValid = validate_tweet(status_tweet)
-        print('Tweet: {}'.format(isValid))
-        if isValid == False:
-            print(status_tweet)
+    tweet_model = nlp_modelling.train(training_corpus)
+    status_tweet = nlp_modelling.create_tweet(tweet_model)
+    # status_tweet = nlp_modelling.create_response(tweet_model)
+
+    # status_tweet = text_model.make_short_sentence(120, tries=25)
+    logging.info("tweet,{}".format(status_tweet))
 
     time2 = time.time()
     print('{} {:.2f}'.format(status_tweet, time2-time1))
-    api.update_status(status_tweet)
+
+    tweet = twitter.auth()
+    tweet.update_status(status_tweet)
 
 
 if __name__ == '__main__':
 
-    # schedule.every().day.at("17:30").do(construct_tweet)
+    # construct_tweet()
+    schedule.every().day.at("17:30").do(construct_tweet)
     schedule.every().hour.do(construct_tweet)
     while True:
         schedule.run_pending()
