@@ -12,4 +12,4 @@ six==1.11.0
 tweepy==3.5.0
 Unidecode==0.4.21
 update-checker==0.16
-urllib3==1.22
+urllib3==1.26.5
